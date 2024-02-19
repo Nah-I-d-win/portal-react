@@ -1,35 +1,93 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useCallback, useEffect, useRef } from "react";
+import "./App.css";
+import { color } from "./fractals/fractal";
+import { Mandelbrot } from "./fractals/mandelbrot";
 
 function App() {
-  const [count, setCount] = useState(0)
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    const resizeCanvas = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (context) {
+            draw(context); 
+        }
+    }, []);
+
+    const debounce = (func: any, delay: number) => {
+        let timer: number;
+        return function(...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                func.apply(this, args);
+            }, delay);
+        };
+    };
+
+    function draw(context: CanvasRenderingContext2D) {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const width = canvas.width;
+        const height = canvas.height;
+        const imageData = context.getImageData(0, 0, width, height);
+
+        const mandelbrot = new Mandelbrot();
+        const data = imageData.data;
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const i = (y * width + x) * 4;
+
+                // TODO: Adjust these values to change the portion of the Mandelbrot set being viewed
+                const cx = (x / width) * 3.5 - 2.5;
+                const cy = (y / height) * 2 - 1;
+
+                const [_, t] = mandelbrot.generate(cx, cy);
+                const [r, g, b] = color((2.0 * t + 0.5) % 1.0);
+
+                data[i] = r; // red
+                data[i + 1] = g; // green
+                data[i + 2] = b; // blue
+                data[i + 3] = 255; // alpha
+            }
+        }
+
+        context.putImageData(imageData, 0, 0);
+    }
+
+    useEffect(() => {
+        resizeCanvas();
+
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) return;
+
+        draw(context);
+
+        const debouncedResize = debounce(() => {
+            resizeCanvas();
+        }, 250); 
+
+        window.addEventListener("resize", debouncedResize);
+
+        return () => {
+            window.removeEventListener("resize", debouncedResize);
+        };
+    }, [resizeCanvas]);
+
+    return (
+        <div>
+            <canvas ref={canvasRef} />
+        </div>
+    );
 }
 
-export default App
+export default App;
