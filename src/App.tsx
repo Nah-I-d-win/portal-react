@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import "./App.css";
 import { color } from "./fractals/fractal";
 import { Mandelbrot } from "./fractals/mandelbrot";
+import { NewtonRaphsonZ3 } from "./fractals/newton_raphson_z3";
 
 function App() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -37,7 +38,8 @@ function App() {
         const height = canvas.height;
         const imageData = context.getImageData(0, 0, width, height);
 
-        const mandelbrot = new Mandelbrot();
+        // const mandelbrot = new Mandelbrot();
+        const newtonRaphson = new NewtonRaphsonZ3();
         const data = imageData.data;
 
         for (let y = 0; y < height; y++) {
@@ -48,7 +50,7 @@ function App() {
                 const cx = (x / width) * 3.5 - 2.5;
                 const cy = (y / height) * 2 - 1;
 
-                const [_, t] = mandelbrot.generate(cx, cy);
+                const [_, t] = newtonRaphson.generate(cx, cy);
                 const [r, g, b] = color((2.0 * t + 0.5) % 1.0);
 
                 data[i] = r; // red
