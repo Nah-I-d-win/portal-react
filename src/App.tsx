@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import FractalRenderer from "./components/FractalRenderer";
-import { NewtonRaphsonZ3 } from "./fractals/newton_raphson_z3";
 import { FragmentRequest } from "./models/fragment_request";
 import { RenderingData } from "./models/rendering_data";
 
