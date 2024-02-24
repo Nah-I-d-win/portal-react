@@ -38,6 +38,7 @@ function App() {
 
   return (
     <div className="w-screen h-screen flex justify-center items-center">
+      <p className="absolute w-screen h-screen pointer-events-none flex items-center justify-center text-center -z-10 text-red-500">CI/CD</p>
       <FractalRenderer data={data} width={300} height={300} />
     </div>
   );
