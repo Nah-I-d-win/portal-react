@@ -22,8 +22,7 @@ jobs:
         run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
 
       - name: Build the Docker image
-        run: docker build . --file Dockerfile -t ${{env.IMAGE_NAME}}:latest
+        run: docker build . --file Dockerfile -t $DOCKER_USERNAME/${{env.IMAGE_NAME}}:${{env.IMAGE_VERSION}}
 
       - name: Push the image to DockerHub
-        run: |
-          docker push ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:latest
+        run: docker push $DOCKER_USERNAME/${{env.IMAGE_NAME}}:${{env.IMAGE_VERSION}}
