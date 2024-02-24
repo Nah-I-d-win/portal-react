@@ -7,7 +7,7 @@ on:
     branches: ["main"]
 
 env:
-  IMAGE_NAME: portal-fractal
+  IMAGE_NAME: fractal-portal
   IMAGE_VERSION: latest
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
         run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
 
       - name: Build the Docker image
-        run: docker build . --file Dockerfile -t ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:${{env.IMAGE_VERSION}}
+        run: docker build . --file Dockerfile -t ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:${{env.IMAGE_VERSION}} -t ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
       - name: Push the image to DockerHub
         run: docker push ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:${{env.IMAGE_VERSION}}
