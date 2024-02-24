@@ -25,4 +25,6 @@ jobs:
       run: docker build . --file Dockerfile -t ${{env.IMAGE_NAME}}:$(date +%s) -t ${{env.IMAGE_NAME}}:latest
 
     - name: Push the image to DockerHub
-      run: docker push ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}} -a
+      run: |
+        docker push ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:$(date +%s)
+        docker push ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:latest
