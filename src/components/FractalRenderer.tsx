@@ -1,93 +1,80 @@
-import { useCallback, useEffect, useRef } from "react";
-import { Fractal, color } from "../fractals/fractal";
-import { NewtonRaphsonZ3 } from "../fractals/newton_raphson_z3";
+import React, { useCallback, useEffect, useRef } from "react";
+import { RenderingData } from "../models/rendering_data";
+import { Range } from "../models/fragment_result";
+import { color } from "../fractals/fractal";
 
-type FractalRendererProps  = {
-    width?: number,
-    height?: number,
-    fractal: Fractal,
+interface FractalRendererProps {
+    width?: number;
+    height?: number;
+    data?: RenderingData[];
 }
 
-function FractalRenderer(props: FractalRendererProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+const FractalRenderer: React.FC<FractalRendererProps> = ({
+    width,
+    height,
+    data,
+}) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const resizeCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const resizeCanvas = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-    canvas.width = props.width ?? window.innerWidth;
-    canvas.height = props.height ?? window.innerHeight;
+        canvas.width = width ?? window.innerWidth;
+        canvas.height = height ?? window.innerHeight;
+    }, [width, height]);
 
-    const context = canvas.getContext("2d", { willReadFrequently: true });
-    if (context) {
-      draw(context);
-    }
-  }, []);
+    const draw = useCallback(
+        (context: CanvasRenderingContext2D) => {
+            if (!data) return;
 
-  const debounce = (func: any, delay: number) => {
-    let timer: number;
-    return function (...args) {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        func.apply(this, args);
-      }, delay);
-    };
-  };
+            data.forEach((d) => {
+                const { result, iterations } = d;
+                const { resolution } = result;
+                const [startX, startY] = startPoint(result.range, canvasRef.current);
 
-  function draw(context: CanvasRenderingContext2D) {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+                const imageData = context.createImageData(resolution.nx, resolution.ny);
 
-    const width = canvas.width;
-    const height = canvas.height;
-    const imageData = context.getImageData(0, 0, width, height);
+                for (let y = 0; y < resolution.ny; ++y) {
+                    for (let x = 0; x < resolution.nx; ++x) {
+                        const t = iterations[y * resolution.nx + x]; // Ensure using nx for indexing
+                        const [r, g, b] = color(t); // Assuming color() returns [r, g, b]
+                        const index = (x + y * resolution.nx) * 4;
+                        imageData.data[index] = r;
+                        imageData.data[index + 1] = g;
+                        imageData.data[index + 2] = b;
+                        imageData.data[index + 3] = 255;
+                    }
+                }
 
-    const data = imageData.data;
+                context.putImageData(imageData, startX, startY);
+            });
+        },
+        [data],
+    );
 
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const i = (y * width + x) * 4;
+    useEffect(() => {
+        resizeCanvas();
+        const canvas = canvasRef.current;
+        const context = canvas?.getContext("2d", { willReadFrequently: true });
+        if (context) {
+            draw(context);
+        }
+    }, [resizeCanvas, draw]);
 
-        // TODO: Adjust these values to change the portion of the Mandelbrot set being viewed
-        const cx = (x / width) * 3.5 - 2.5;
-        const cy = (y / height) * 2 - 1;
+    return <canvas ref={canvasRef} />;
+};
 
-        const [_, t] = props.fractal.generate(cx, cy);
-        const [r, g, b] = color((2.0 * t + 0.5) % 1.0);
+function startPoint(
+    range: Range,
+    canvas?: HTMLCanvasElement | null,
+): [number, number] {
+    if (!canvas) return [0, 0];
+    // Adjust these calculations according to how you want to map the fractal's range to the canvas size
+    const x = ((range.min.x - -1.2) / (1.2 - -1.2)) * canvas.width;
+    const y = ((range.min.y - -1.2) / (1.2 - -1.2)) * canvas.height;
 
-        data[i] = r; // red
-        data[i + 1] = g; // green
-        data[i + 2] = b; // blue
-        data[i + 3] = 255; // alpha
-      }
-    }
-
-    context.putImageData(imageData, 0, 0);
-  }
-
-  useEffect(() => {
-    resizeCanvas();
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const context = canvas.getContext("2d", { willReadFrequently: true });
-    if (!context) return;
-
-    draw(context);
-
-    // const debouncedResize = debounce(() => {
-    //   resizeCanvas();
-    // }, 250);
-
-    // window.addEventListener("resize", debouncedResize);
-
-    return () => {
-      // window.removeEventListener("resize", debouncedResize);
-    };
-  }, [resizeCanvas]);
-
-  return <canvas ref={canvasRef} />;
+    return [x, y];
 }
 
 export default FractalRenderer;
