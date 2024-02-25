@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { RenderingData } from "../models/rendering_data";
 import { Range } from "../models/fragment_result";
 import { color } from "../fractals/fractal";
@@ -7,31 +7,45 @@ interface FractalRendererProps {
     width?: number;
     height?: number;
     data?: RenderingData[];
+    server?: any;
+}
+
+interface HoveredTile {
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
 }
 
 const FractalRenderer: React.FC<FractalRendererProps> = ({
     width,
     height,
     data,
+    server
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-
-    const resizeCanvas = useCallback(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        canvas.width = width ?? window.innerWidth;
-        canvas.height = height ?? window.innerHeight;
-    }, [width, height]);
+    const [hoveredWorker, setHoveredWorker] = useState<string | null>(null);
+    const [hoveredTile, setHoveredTile] = useState<HoveredTile | null>(null);
+    const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({
+        x: 0,
+        y: 0,
+    });
 
     const draw = useCallback(
         (context: CanvasRenderingContext2D) => {
             if (!data) return;
+            const canvas = canvasRef.current;
+            if (!canvas) return;
 
             data.forEach((d) => {
                 const { result, iterations } = d;
                 const { resolution } = result;
-                const [startX, startY] = startPoint(result.range, canvasRef.current);
+                const [startX, startY] = startPoint(
+                    result.range,
+                    server,
+                    width ?? canvas.width,
+                    height ?? canvas.height,
+                );
 
                 const imageData = context.createImageData(resolution.nx, resolution.ny);
 
@@ -48,31 +62,98 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
                 }
 
                 context.putImageData(imageData, startX, startY);
+
+                if (hoveredTile) {
+                    context.strokeStyle = "red"; // Choose a color for the square
+                    context.lineWidth = 2; // Set the line width
+                    context.strokeRect(
+                        hoveredTile.startX,
+                        hoveredTile.startY,
+                        hoveredTile.endX - hoveredTile.startX,
+                        hoveredTile.endY - hoveredTile.startY,
+                    );
+                }
             });
         },
-        [data],
+        [data, height, width, hoveredTile],
     );
 
     useEffect(() => {
-        resizeCanvas();
         const canvas = canvasRef.current;
         const context = canvas?.getContext("2d", { willReadFrequently: true });
         if (context) {
             draw(context);
         }
-    }, [resizeCanvas, draw]);
 
-    return <canvas ref={canvasRef} />;
+        const handleMouseMove = (event: MouseEvent) => {
+            if (!canvas || !data) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            setMousePosition({ x: event.clientX, y: event.clientY });
+
+            let hovered = null;
+            let hoveredTile: HoveredTile | null = null;
+            data.forEach((d) => {
+                const { result } = d;
+                const [startX, startY] = startPoint(
+                    result.range,
+                    server,
+                    width ?? canvas.width,
+                    height ?? canvas.height,
+                );
+                const endX = startX + result.resolution.nx;
+                const endY = startY + result.resolution.ny;
+
+                if (x >= startX && x <= endX && y >= startY && y <= endY) {
+                    hovered = d.worker;
+                    hoveredTile = { startX, startY, endX, endY };
+                }
+            });
+
+            setHoveredWorker(hovered);
+            setHoveredTile(hoveredTile);
+        };
+
+        canvas?.addEventListener("mousemove", handleMouseMove);
+
+        return () => {
+            canvas?.removeEventListener("mousemove", handleMouseMove);
+        };
+    }, [draw, data, width, height]);
+
+    return (
+        <>
+            <canvas ref={canvasRef} width={width} height={height} />
+            {hoveredWorker && (
+                <div
+                    className="absolute p-2 bg-gray-700 text-white text-sm rounded-lg shadow"
+                    style={{ left: mousePosition.x, top: mousePosition.y }}
+                >
+                    {hoveredWorker}
+                </div>
+            )}
+        </>
+    );
 };
 
 function startPoint(
     range: Range,
-    canvas?: HTMLCanvasElement | null,
+    server: any,
+    width: number,
+    height: number,
 ): [number, number] {
-    if (!canvas) return [0, 0];
-    // Adjust these calculations according to how you want to map the fractal's range to the canvas size
-    const x = ((range.min.x - -1.2) / (1.2 - -1.2)) * canvas.width;
-    const y = ((range.min.y - -1.2) / (1.2 - -1.2)) * canvas.height;
+    const x =
+        ((range.min.x - server.range.min.x) /
+            (server.range.max.x - server.range.min.x)) *
+        width;
+
+    const y =
+        ((range.min.y - server.range.min.y) /
+            (server.range.max.y - server.range.min.y)) *
+        height;
 
     return [x, y];
 }
