@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { RenderingData } from "../models/rendering_data";
-import { Range } from "../models/fragment_result";
 import { color } from "../fractals/fractal";
+import { ServerDto, Range } from "../models/server";
 
 interface FractalRendererProps {
     width?: number;
     height?: number;
     data?: RenderingData[];
-    server?: any;
+    server?: ServerDto | null;
 }
 
 interface HoveredTile {
@@ -21,7 +21,7 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
     width,
     height,
     data,
-    server
+    server,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [hoveredWorker, setHoveredWorker] = useState<string | null>(null);
@@ -36,6 +36,7 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
             if (!data) return;
             const canvas = canvasRef.current;
             if (!canvas) return;
+            if (!server) return;
 
             data.forEach((d) => {
                 const { result, iterations } = d;
@@ -75,7 +76,7 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
                 }
             });
         },
-        [data, height, width, hoveredTile],
+        [data, height, width, hoveredTile, server],
     );
 
     useEffect(() => {
@@ -87,6 +88,7 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
 
         const handleMouseMove = (event: MouseEvent) => {
             if (!canvas || !data) return;
+            if (!server) return;
 
             const rect = canvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
@@ -122,7 +124,7 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
         return () => {
             canvas?.removeEventListener("mousemove", handleMouseMove);
         };
-    }, [draw, data, width, height]);
+    }, [draw, data, width, height, server]);
 
     return (
         <>
@@ -141,7 +143,7 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
 
 function startPoint(
     range: Range,
-    server: any,
+    server: ServerDto,
     width: number,
     height: number,
 ): [number, number] {
