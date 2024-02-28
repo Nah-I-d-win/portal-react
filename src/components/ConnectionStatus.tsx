@@ -18,7 +18,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
     onWsUrlChange,
 }) => {
     const [loading, setLoading] = useState<boolean>(false);
-    const [tempWsUrl, setTempWsUrl] = useState("http://localhost:8686/ws");
+    const [tempWsUrl, setTempWsUrl] = useState("ws://localhost:8686/ws");
 
     const handleWsUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTempWsUrl(e.target.value);
