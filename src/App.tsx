@@ -15,8 +15,8 @@ function App() {
             <FractalRenderer
                 data={data}
                 server={serverDto}
-                width={800}
-                height={800}
+                width={serverDto?.config.width ?? 800}
+                height={serverDto?.config.height ?? 800}
             />
         </div>
     );

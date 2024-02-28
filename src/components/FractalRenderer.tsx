@@ -1,7 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import axiosInstance from "../app/axios";
 import { RenderingData } from "../models/rendering_data";
 import { color } from "../fractals/fractal";
 import { ServerDto, Range } from "../models/server";
+
+type HorizontalDirection = "right" | "left";
+type VerticalDirection = "top" | "bottom";
+type Direction = HorizontalDirection | VerticalDirection;
 
 interface FractalRendererProps {
     width?: number;
@@ -30,6 +35,52 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
         x: 0,
         y: 0,
     });
+
+    const moveFractal = async (direction: Direction) => {
+        try {
+            const response = await axiosInstance.get(
+                `/fractal/move?direction=${direction}`,
+                {
+                    // TODO: change to POST request
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
+
+            if (response.status != 200) {
+                throw new Error("Failed to move fractal");
+            }
+
+            console.log(`Fractal moved ${direction} successfully.`);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const cycleFractal = async (direction: HorizontalDirection) => {
+        try {
+            const response = await axiosInstance.get(
+                `/fractal/cycle?direction=${direction}`,
+                {
+                    // TODO: change to POST request
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
+
+            if (response.status != 200) {
+                throw new Error("Failed to cycle fractal");
+            }
+
+            console.log(`Fractal cycled ${direction} successfully.`);
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
     const draw = useCallback(
         (context: CanvasRenderingContext2D) => {
@@ -137,6 +188,44 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
                     {hoveredWorker}
                 </div>
             )}
+            <div className="absolute bottom-5 flex justify-center gap-4 mt-4">
+                <button
+                    onClick={() => cycleFractal("left")}
+                    className="bg-gray-800 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                    Previous Fractal
+                </button>
+                <button
+                    onClick={() => moveFractal("top")}
+                    className="bg-gray-700 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                    Move Up
+                </button>
+                <button
+                    onClick={() => moveFractal("right")}
+                    className="bg-gray-700 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                    Move Right
+                </button>
+                <button
+                    onClick={() => moveFractal("bottom")}
+                    className="bg-gray-700 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                    Move Down
+                </button>
+                <button
+                    onClick={() => moveFractal("left")}
+                    className="bg-gray-700 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                    Move Left
+                </button>
+                <button
+                    onClick={() => cycleFractal("right")}
+                    className="bg-gray-800 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                    Next Fractal
+                </button>
+            </div>
         </>
     );
 };
