@@ -1,17 +1,27 @@
+
+// App.js or App.tsx
+import React, { useState } from "react";
 import FractalRenderer from "./components/FractalRenderer";
-import { useWebSocket } from "./app/hooks/useWebSocket";
 import ConnectionStatus from "./components/ConnectionStatus";
-import DataStatus from "./components/DataStatus";
+import { useWebSocket } from "./app/hooks/useWebSocket";
 
 function App() {
-    const { data, serverDto, isConnected } = useWebSocket(
-        "ws://localhost:8686/ws/",
-    );
+    const [wsUrl, setWsUrl] = useState("ws://localhost:8686/ws/");
+    const { data, serverDto, isConnected, updateUrl } = useWebSocket(wsUrl);
+
+    const updateWsUrl = (newUrl: string) => {
+        setWsUrl(newUrl);
+        updateUrl(newUrl)
+    };
 
     return (
-        <div className="w-screen h-screen flex justify-center items-center bg-gray-100">
-            <ConnectionStatus isConnected={isConnected} />
-            <DataStatus data={data} />
+        <div className="w-screen h-screen flex justify-center items-center bg-gray-800">
+            <ConnectionStatus
+                data={data}
+                server={serverDto}
+                isConnected={isConnected}
+                onWsUrlChange={updateWsUrl}
+            />
             <FractalRenderer
                 data={data}
                 server={serverDto}

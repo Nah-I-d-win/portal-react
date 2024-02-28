@@ -5,7 +5,14 @@ export interface ServerDto {
     range: Range;
     currentFractal: number;
     fractals: FractalDescriptor[];
-    workers: { [key: string]: Worker }; // Assuming SocketAddr can be represented as string keys
+    workers: { [key: string]: Worker };
+}
+
+export interface Worker {
+    address: string;
+    maximal_work_load: number;
+    name: string;
+    port: number;
 }
 
 export interface FragmentTask {
@@ -82,8 +89,4 @@ export interface Resolution {
 export interface PixelData {
     offset: number;
     count: number;
-}
-
-export interface Worker {
-    /* fields */
 }

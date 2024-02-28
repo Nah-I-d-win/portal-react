@@ -1,36 +1,39 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { FragmentRequest } from "../../models/fragment_request";
 import { RenderingData } from "../../models/rendering_data";
 import { ServerDto } from "../../models/server";
 
 interface PortalMessage {
     type: string;
-    // NOTE: eww, make it cleaner
-    payload: any;
+    payload: any; // Consider using a more specific type or union of types if possible
 }
 
-export function useWebSocket(url: string) {
+export function useWebSocket(initialUrl: string) {
     const [data, setData] = useState<RenderingData[]>([]);
     const [serverDto, setServerDto] = useState<ServerDto | null>(null);
     const [isConnected, setIsConnected] = useState<boolean>(false);
+    const [url, setUrl] = useState<string>(initialUrl); // Track the URL as state
 
-    const [shouldReconnect, setShouldReconnect] = useState<boolean>(true);
-    const [reconnectAttempts, setReconnectAttempts] = useState<number>(0);
+    const ws = useRef<WebSocket | null>(null);
+
+    const closeConnection = useCallback(() => {
+        if (ws.current) {
+            ws.current.close(); // Close the existing connection if open
+        }
+    }, []);
 
     const connect = useCallback(() => {
-        if (!shouldReconnect) return; // Prevent connection if shouldReconnect is false
+        closeConnection(); // Ensure any existing connection is closed
 
-        const ws = new WebSocket(url);
+        ws.current = new WebSocket(url);
 
-        ws.onopen = () => {
-            console.log("WebSocket connection established");
+        ws.current.onopen = () => {
+            console.log("WebSocket connection established with", url);
             setIsConnected(true);
-            setReconnectAttempts(0);
-            ws.send(JSON.stringify(new FragmentRequest("portal", 100)));
+            ws.current?.send(JSON.stringify(new FragmentRequest("portal", 100)));
         };
 
-        ws.onmessage = (event: MessageEvent) => {
-            console.log("Message from server received");
+        ws.current.onmessage = (event: MessageEvent) => {
             const message: PortalMessage = JSON.parse(event.data);
             switch (message.type) {
                 case "server_sync":
@@ -45,35 +48,27 @@ export function useWebSocket(url: string) {
             }
         };
 
-        ws.onerror = (error: Event) => {
-            console.error("WebSocket error:", error);
+        ws.current.onerror = (error: Event) => {
+            console.error("WebSocket error with", url, ":", error);
         };
 
-        ws.onclose = () => {
-            console.log("WebSocket connection closed");
+        ws.current.onclose = () => {
+            console.log("WebSocket connection closed with", url);
             setIsConnected(false);
-            if (shouldReconnect) {
-                setTimeout(
-                    () => {
-                        setReconnectAttempts((prevAttempts) => prevAttempts + 1);
-                        connect();
-                    },
-                    // Exponential reconnection attempts
-                    Math.min(10000, 1000 * reconnectAttempts),
-                );
-            }
         };
+    }, [url, closeConnection]);
 
-        return () => {
-            setShouldReconnect(false);
-            ws.close();
-        };
-    }, [url, shouldReconnect, reconnectAttempts]);
+    // Provide a method to update the URL, which triggers reconnection
+    const updateUrl = useCallback((newUrl: string) => {
+        setUrl(newUrl);
+    }, []);
 
     useEffect(() => {
         connect();
-        return () => setShouldReconnect(false);
-    }, [connect]);
+        return () => {
+            closeConnection(); // Clean up connection when component unmounts or URL changes
+        };
+    }, [connect, closeConnection]);
 
-    return { data, serverDto, isConnected };
+    return { data, serverDto, isConnected, updateUrl };
 }
