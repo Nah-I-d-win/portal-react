@@ -30,7 +30,7 @@ const FractalInfo: React.FC<FractalInfoProps> = ({ server, data }) => {
             <div className="text-gray-300">
                 <span>Workers: </span>
                 <ul className="mt-1">
-                    {Object.entries(server.workers).slice(0, 5).map(([key, worker], index) => (
+                    {Object.entries(server.workers).slice(0, 5).map(([, worker], index) => (
                         <li
                             key={index}
                             className="hover:text-white transition-colors duration-200 ease-in-out"

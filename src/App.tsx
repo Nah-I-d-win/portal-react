@@ -1,9 +1,7 @@
-
-// App.js or App.tsx
-import React, { useState } from "react";
 import FractalRenderer from "./components/FractalRenderer";
 import ConnectionStatus from "./components/ConnectionStatus";
 import { useWebSocket } from "./app/hooks/useWebSocket";
+import { useState } from "react";
 
 function App() {
     const [wsUrl, setWsUrl] = useState("ws://localhost:8686/ws/");
@@ -11,7 +9,7 @@ function App() {
 
     const updateWsUrl = (newUrl: string) => {
         setWsUrl(newUrl);
-        updateUrl(newUrl)
+        updateUrl(newUrl);
     };
 
     return (
