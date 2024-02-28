@@ -1,13 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { RenderingData } from "../models/rendering_data";
-import { color } from "../fractals/fractal";
 import { ServerDto, Range } from "../models/server";
+import { PaletteHandler } from "../utils/colors";
+import { color } from "../fractals/fractal";
 
 interface FractalRendererProps {
     width?: number;
     height?: number;
     data?: RenderingData[];
     server?: ServerDto | null;
+    paletteHandler?: PaletteHandler
 }
 
 interface HoveredTile {
@@ -22,6 +24,7 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
     height,
     data,
     server,
+    paletteHandler
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [hoveredWorker, setHoveredWorker] = useState<string | null>(null);
@@ -52,8 +55,8 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
 
                 for (let y = 0; y < resolution.ny; ++y) {
                     for (let x = 0; x < resolution.nx; ++x) {
-                        const t = iterations[y * resolution.nx + x]; // Ensure using nx for indexing
-                        const [r, g, b] = color(t); // Assuming color() returns [r, g, b]
+                        const t = iterations[y * resolution.nx + x];
+                        const [r, g, b] = paletteHandler?.calculateColor(t) ?? color(t);
                         const index = (x + y * resolution.nx) * 4;
                         imageData.data[index] = r;
                         imageData.data[index + 1] = g;
@@ -65,8 +68,8 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
                 context.putImageData(imageData, startX, startY);
 
                 if (hoveredTile) {
-                    context.strokeStyle = "red"; // Choose a color for the square
-                    context.lineWidth = 2; // Set the line width
+                    context.strokeStyle = "red";
+                    context.lineWidth = 2;
                     context.strokeRect(
                         hoveredTile.startX,
                         hoveredTile.startY,
@@ -76,7 +79,7 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
                 }
             });
         },
-        [data, height, width, hoveredTile, server],
+        [data, height, width, hoveredTile, server, paletteHandler],
     );
 
     useEffect(() => {

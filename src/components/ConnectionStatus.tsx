@@ -3,11 +3,13 @@ import axiosInstance from "../app/axios";
 import { RenderingData } from "../models/rendering_data";
 import { ServerDto } from "../models/server";
 import FractalInfo from "./FractalInfo";
+import { PaletteHandler } from "../utils/colors";
 
 interface ConnectionStatusProps {
     isConnected: boolean;
     server?: ServerDto | null;
     data?: RenderingData[];
+    paletteHandler: PaletteHandler;
     onWsUrlChange: (newUrl: string) => void;
 }
 
@@ -16,6 +18,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
     server,
     data,
     onWsUrlChange,
+    paletteHandler
 }) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [tempWsUrl, setTempWsUrl] = useState("ws://localhost:8686/ws");
@@ -40,7 +43,27 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
         { label: "Next Fractal", direction: "next" },
     ];
 
-    const handleAction = async (type: "move" | "cycle", direction: string) => {
+    const paletteCycles = [
+        { label: "Previous Palette", direction: "previous" },
+        { label: "Next Palette", direction: "next" },
+    ];
+
+    function handlePalette(direction: string) {
+        if (direction === "previous") {
+            paletteHandler.cyclePaletteBackward();
+        } else {
+            paletteHandler.cyclePaletteForward();
+        }
+    }
+
+    const handleAction = async (
+        type: "move" | "cycle" | "palette",
+        direction: string,
+    ) => {
+        if (type === "palette") {
+            handlePalette(direction);
+            return;
+        }
         setLoading(true);
         const endpoint =
             type === "move" ? "/api/fractal/move" : "/api/fractal/cycle";
@@ -92,6 +115,12 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
                         actions={movementDirections}
                         loading={loading}
                         onAction={handleAction}
+                        type="move"
+                    />
+                    <ActionButtons
+                        actions={paletteCycles}
+                        loading={loading}
+                        onAction={handlePalette}
                         type="move"
                     />
                 </>
