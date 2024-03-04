@@ -91,7 +91,7 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
         if (!canvasRef.current) return;
         await saveCanvasAsImage(
             canvasRef.current,
-            import.meta.env.VITE_REACT_APP_SAVE_IMAGE_URL,
+            "https://48t54gy4p1.execute-api.eu-west-1.amazonaws.com/Prod/save-image",
         );
     };
 

@@ -2,7 +2,7 @@ import React from "react";
 import { useGallery } from "../app/hooks/useGallery";
 
 const FractalGallery: React.FC = () => {
-    const images = useGallery(import.meta.env.VITE_REACT_APP_GALLERY_URL || "");
+    const images = useGallery("https://48t54gy4p1.execute-api.eu-west-1.amazonaws.com/Prod/gallery");
 
     return (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

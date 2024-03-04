@@ -39,9 +39,8 @@ const useFractalActions = (paletteHandler: PaletteHandler) => {
                 maximal_work_load: 100,
             };
             const body = JSON.stringify(request);
-            console.log(import.meta.env)
             const response = await axios.post(
-                import.meta.env.VITE_REACT_APP_REQUEST_URL,
+                "https://48t54gy4p1.execute-api.eu-west-1.amazonaws.com/Prod/request",
                 body,
             );
 
