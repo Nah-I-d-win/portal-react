@@ -7,9 +7,7 @@ import { PaletteHandler } from "./utils/colors";
 function App() {
     const [wsUrl, setWsUrl] = useState("ws://localhost:8686/ws/");
     const { data, serverDto, isConnected, updateUrl } = useWebSocket(wsUrl);
-    const [paletteHandler] = useState<PaletteHandler>(
-        new PaletteHandler(),
-    );
+    const [paletteHandler] = useState<PaletteHandler>(new PaletteHandler());
 
     const updateWsUrl = (newUrl: string) => {
         setWsUrl(newUrl);

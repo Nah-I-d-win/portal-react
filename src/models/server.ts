@@ -32,27 +32,19 @@ export type FractalDescriptor =
     | NovaNewtonRaphsonZ3
     | NovaNewtonRaphsonZ4;
 
-// Define the individual fractal interfaces, assuming similar fields to Rust structs (adjust as needed)
 export interface Julia {
-    /* fields */
 }
 export interface Mandelbrot {
-    /* fields */
 }
 export interface IteratedSinZ {
-    /* fields */
 }
 export interface NewtonRaphsonZ3 {
-    /* fields */
 }
 export interface NewtonRaphsonZ4 {
-    /* fields */
 }
 export interface NovaNewtonRaphsonZ3 {
-    /* fields */
 }
 export interface NovaNewtonRaphsonZ4 {
-    /* fields */
 }
 
 export interface U8Data {

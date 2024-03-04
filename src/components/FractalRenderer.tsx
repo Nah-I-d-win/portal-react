@@ -1,41 +1,31 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { RenderingData } from "../models/rendering_data";
-import { ServerDto, Range } from "../models/server";
+import { useCallback } from "react";
 import { PaletteHandler } from "../utils/colors";
+import { Camera } from "lucide-react";
 import { color } from "../fractals/fractal";
+import { RenderingData } from "../models/rendering_data";
+import { ServerDto } from "../models/server";
+import { useCanvas } from "../app/hooks/useCanvas";
+import { useMouseTracking } from "../app/hooks/useMouseTracking";
+import { saveCanvasAsImage, startPoint } from "../utils/canvasHelper";
 
 interface FractalRendererProps {
     width?: number;
     height?: number;
     data?: RenderingData[];
     server?: ServerDto | null;
-    paletteHandler?: PaletteHandler
-}
-
-interface HoveredTile {
-    startX: number;
-    startY: number;
-    endX: number;
-    endY: number;
+    paletteHandler?: PaletteHandler;
 }
 
 const FractalRenderer: React.FC<FractalRendererProps> = ({
-    width,
-    height,
-    data,
+    width = 800,
+    height = 600,
+    data = [],
     server,
-    paletteHandler
+    paletteHandler,
 }) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [hoveredWorker, setHoveredWorker] = useState<string | null>(null);
-    const [hoveredTile, setHoveredTile] = useState<HoveredTile | null>(null);
-    const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({
-        x: 0,
-        y: 0,
-    });
-
     const draw = useCallback(
         (context: CanvasRenderingContext2D) => {
+            if (!server || !paletteHandler) return;
             if (!data) return;
             const canvas = canvasRef.current;
             if (!canvas) return;
@@ -79,88 +69,54 @@ const FractalRenderer: React.FC<FractalRendererProps> = ({
                 }
             });
         },
-        [data, height, width, hoveredTile, server, paletteHandler],
+        [data, server, paletteHandler],
     );
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        const context = canvas?.getContext("2d", { willReadFrequently: true });
-        if (context) {
-            draw(context);
-        }
+    const canvasRef = useCanvas(draw, [
+        data,
+        server,
+        paletteHandler,
+        width,
+        height,
+    ]);
 
-        const handleMouseMove = (event: MouseEvent) => {
-            if (!canvas || !data) return;
-            if (!server) return;
+    const { mousePosition, hoveredTile } = useMouseTracking(
+        canvasRef,
+        server ?? null,
+        data,
+        null,
+    );
 
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-
-            setMousePosition({ x: event.clientX, y: event.clientY });
-
-            let hovered = null;
-            let hoveredTile: HoveredTile | null = null;
-            data.forEach((d) => {
-                const { result } = d;
-                const [startX, startY] = startPoint(
-                    result.range,
-                    server,
-                    width ?? canvas.width,
-                    height ?? canvas.height,
-                );
-                const endX = startX + result.resolution.nx;
-                const endY = startY + result.resolution.ny;
-
-                if (x >= startX && x <= endX && y >= startY && y <= endY) {
-                    hovered = d.worker;
-                    hoveredTile = { startX, startY, endX, endY };
-                }
-            });
-
-            setHoveredWorker(hovered);
-            setHoveredTile(hoveredTile);
-        };
-
-        canvas?.addEventListener("mousemove", handleMouseMove);
-
-        return () => {
-            canvas?.removeEventListener("mousemove", handleMouseMove);
-        };
-    }, [draw, data, width, height, server]);
+    const handleSaveImageClick = async () => {
+        if (!canvasRef.current) return;
+        await saveCanvasAsImage(
+            canvasRef.current,
+            import.meta.env.VITE_REACT_APP_SAVE_IMAGE_URL,
+        );
+    };
 
     return (
         <>
-            <canvas ref={canvasRef} width={width} height={height} />
-            {hoveredWorker && (
+            <canvas
+                ref={canvasRef}
+                width={width}
+                height={height}
+                className="rounded-lg shadow-lg"
+            />
+            {hoveredTile && (
                 <div
                     className="absolute p-2 bg-gray-700 text-white text-sm rounded-lg shadow"
                     style={{ left: mousePosition.x, top: mousePosition.y }}
-                >
-                    {hoveredWorker}
-                </div>
+                ></div>
             )}
+            <div
+                onClick={handleSaveImageClick}
+                className="fixed bottom-10 right-10 bg-blue-500 p-3 rounded-full hover:bg-blue-400 cursor-pointer"
+            >
+                <Camera color="white" size={32} />
+            </div>
         </>
     );
 };
-
-function startPoint(
-    range: Range,
-    server: ServerDto,
-    width: number,
-    height: number,
-): [number, number] {
-    const x =
-        ((range.min.x - server.range.min.x) /
-            (server.range.max.x - server.range.min.x)) *
-        width;
-
-    const y =
-        ((range.min.y - server.range.min.y) /
-            (server.range.max.y - server.range.min.y)) *
-        height;
-
-    return [x, y];
-}
 
 export default FractalRenderer;

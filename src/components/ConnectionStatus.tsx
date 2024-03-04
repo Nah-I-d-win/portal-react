@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import axiosInstance from "../app/axios";
-import { RenderingData } from "../models/rendering_data";
-import { ServerDto } from "../models/server";
 import FractalInfo from "./FractalInfo";
+import { ServerDto } from "../models/server";
+import { RenderingData } from "../models/rendering_data";
 import { PaletteHandler } from "../utils/colors";
+import useFractalActions from "../app/hooks/useFractalActions";
+import WebSocketUrlInput from "./WebSocketUrlInput";
+import ActionButtons, { ActionButton } from "./ActionButtons";
 
 interface ConnectionStatusProps {
     isConnected: boolean;
@@ -13,145 +15,80 @@ interface ConnectionStatusProps {
     onWsUrlChange: (newUrl: string) => void;
 }
 
+const movementActions: ActionButton[] = [
+    { label: "Move Up", actionType: "move", direction: "up" },
+    { label: "Move Down", actionType: "move", direction: "down" },
+    { label: "Move Left", actionType: "move", direction: "left" },
+    { label: "Move Right", actionType: "move", direction: "right" },
+];
+
+const fractalCycleActions: ActionButton[] = [
+    { label: "Previous Fractal", actionType: "cycle", direction: "previous" },
+    { label: "Next Fractal", actionType: "cycle", direction: "next" },
+];
+
+const paletteCycleActions: ActionButton[] = [
+    { label: "Previous Palette", actionType: "palette", direction: "previous" },
+    { label: "Next Palette", actionType: "palette", direction: "next" },
+];
+
 const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
     isConnected,
     server,
     data,
     onWsUrlChange,
-    paletteHandler
+    paletteHandler,
 }) => {
-    const [loading, setLoading] = useState<boolean>(false);
     const [tempWsUrl, setTempWsUrl] = useState("ws://localhost:8686/ws");
 
-    const handleWsUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setTempWsUrl(e.target.value);
-    };
-
-    const applyWsUrl = () => {
-        onWsUrlChange(tempWsUrl);
-    };
-
-    const movementDirections = [
-        { label: "Move Up", direction: "up" },
-        { label: "Move Down", direction: "down" },
-        { label: "Move Left", direction: "left" },
-        { label: "Move Right", direction: "right" },
-    ];
-
-    const fractalCycles = [
-        { label: "Previous Fractal", direction: "previous" },
-        { label: "Next Fractal", direction: "next" },
-    ];
-
-    const paletteCycles = [
-        { label: "Previous Palette", direction: "previous" },
-        { label: "Next Palette", direction: "next" },
-    ];
-
-    function handlePalette(direction: string) {
-        if (direction === "previous") {
-            paletteHandler.cyclePaletteBackward();
-        } else {
-            paletteHandler.cyclePaletteForward();
-        }
-    }
-
-    const handleAction = async (
-        type: "move" | "cycle" | "palette",
-        direction: string,
-    ) => {
-        if (type === "palette") {
-            handlePalette(direction);
-            return;
-        }
-        setLoading(true);
-        const endpoint =
-            type === "move" ? "/api/fractal/move" : "/api/fractal/cycle";
-        try {
-            await axiosInstance.post(endpoint, { direction });
-        } catch (error) {
-            console.error(
-                `Error ${type === "move" ? "moving" : "cycling"} fractal:`,
-                error,
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { loading, handleAction, sendFragmentRequest } =
+        useFractalActions(paletteHandler);
 
     return (
         <div className="fixed top-20 right-4 px-6 py-3 space-y-3 rounded-lg text-sm font-medium bg-gray-900">
-            <div className="flex items-center justify-between text-gray-400">
-                <span>Status:</span>
-                <span
-                    className={`font-semibold ${isConnected ? "text-green-400" : "text-red-400"}`}
-                >
-                    {isConnected ? "Connected" : "Disconnected"}
-                </span>
-            </div>
-            <div className="my-4">
-                <input
-                    type="text"
-                    placeholder="Enter WebSocket URL"
-                    defaultValue={tempWsUrl}
-                    value={tempWsUrl}
-                    onChange={handleWsUrlChange}
-                    className="text-white"
-                />
-                <button onClick={applyWsUrl} className="ml-2">
-                    Apply URL
-                </button>
-            </div>
-            {server && (
+            <WebSocketUrlInput
+                tempWsUrl={tempWsUrl}
+                setTempWsUrl={setTempWsUrl}
+                applyWsUrl={() => onWsUrlChange(tempWsUrl)}
+            />
+            {server && <FractalInfo server={server} data={data} />}
+            {isConnected ? (
                 <>
-                    <FractalInfo server={server} data={data} />
                     <ActionButtons
-                        actions={fractalCycles}
+                        actions={movementActions}
                         loading={loading}
-                        onAction={handleAction}
-                        type="cycle"
+                        handleAction={handleAction}
                     />
                     <ActionButtons
-                        actions={movementDirections}
+                        actions={fractalCycleActions}
                         loading={loading}
-                        onAction={handleAction}
-                        type="move"
+                        handleAction={handleAction}
                     />
                     <ActionButtons
-                        actions={paletteCycles}
+                        actions={paletteCycleActions}
                         loading={loading}
-                        onAction={handlePalette}
-                        type="move"
+                        handleAction={handleAction}
                     />
+                    <button
+                        onClick={sendFragmentRequest}
+                        className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-md"
+                    >
+                        Issue Fragment Request
+                    </button>
                 </>
+            ) : (
+                <div>
+                    <p className="text-red-500">Disconnected from server</p>
+                    <button
+                        onClick={() => onWsUrlChange(tempWsUrl)}
+                        className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-md"
+                    >
+                        Reconnect
+                    </button>
+                </div>
             )}
         </div>
     );
 };
-
-const ActionButtons = ({
-    actions,
-    loading,
-    onAction,
-    type,
-}: {
-    actions: { label: string; direction: string }[];
-    loading: boolean;
-    onAction: (type: "move" | "cycle", direction: string) => void;
-    type: "move" | "cycle";
-}) => (
-    <div className="flex gap-2">
-        {actions.map((action) => (
-            <button
-                key={action.label}
-                onClick={() => onAction(type, action.direction)}
-                disabled={loading}
-                className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-md"
-            >
-                {action.label}
-            </button>
-        ))}
-    </div>
-);
 
 export default ConnectionStatus;
