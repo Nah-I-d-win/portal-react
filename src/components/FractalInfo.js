@@ -1,5 +1,0 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-const FractalInfo = ({ server, data = [] }) => (_jsxs("div", { className: "space-y-2 text-gray-300", children: [_jsx("h2", { className: "text-gray-400", children: "Fractal Info:" }), _jsxs("p", { children: ["Type: ", server.currentFractal] }), _jsx("p", { children: "Color Scheme: inferno" }), _jsxs("p", { children: ["View Range: [", _jsxs("span", { className: "text-indigo-400", children: [server.range.min.x.toFixed(2), ", ", server.range.min.y.toFixed(2)] }), "] to [", _jsxs("span", { className: "text-indigo-400", children: [server.range.max.x.toFixed(2), ", ", server.range.max.y.toFixed(2)] }), "]"] }), _jsxs("p", { children: ["Tiles Received: ", data.length] }), _jsx("p", { children: "Workers:" }), _jsx("ul", { className: "mt-1", children: Object.values(server.workers)
-                .slice(0, 5)
-                .map((worker, index) => (_jsxs("li", { className: "hover:text-white transition-colors duration-200 ease-in-out", children: [worker.name, " (", worker.maximal_work_load, ", ", worker.port, ")"] }, index))) })] }));
-export default FractalInfo;
