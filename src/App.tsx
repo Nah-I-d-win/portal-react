@@ -29,13 +29,15 @@ function App() {
                 isConnected={isConnected}
                 onWsUrlChange={updateWsUrl}
             />
-            <FractalRenderer
-                data={data}
-                server={serverDto}
-                paletteHandler={paletteHandler}
-                width={serverDto?.config.width ?? 800}
-                height={serverDto?.config.height ?? 800}
-            />
+            <div className="absolute w-screen h-screen flex items-center justify-center">
+                <FractalRenderer
+                    data={data}
+                    server={serverDto}
+                    paletteHandler={paletteHandler}
+                    width={serverDto?.config.width ?? 800}
+                    height={serverDto?.config.height ?? 800}
+                />
+            </div>
             {showLibrary && (
                 <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center bg-black bg-opacity-75">
                     <FractalGallery />

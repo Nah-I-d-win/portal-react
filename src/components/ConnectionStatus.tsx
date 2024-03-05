@@ -45,7 +45,7 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
         useFractalActions(paletteHandler);
 
     return (
-        <div className="fixed top-20 right-4 px-6 py-3 space-y-3 rounded-lg text-sm font-medium bg-gray-900">
+        <div className="fixed top-20 right-4 px-6 py-3 space-y-3 rounded-lg text-sm font-medium bg-gray-900 z-20">
             <WebSocketUrlInput
                 tempWsUrl={tempWsUrl}
                 setTempWsUrl={setTempWsUrl}
